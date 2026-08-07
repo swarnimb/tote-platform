@@ -7,9 +7,16 @@ import LeadDetail, { LeadDetailEmptyState } from './LeadDetail'
 import LeadForm from './LeadForm'
 import ConvertLeadDialog from './ConvertLeadDialog'
 import DetailDrawer from '@/components/shell/DetailDrawer'
+import { useDemoDetail, type DemoDetails } from '@/lib/demo/details'
 import type { LeadDetail as LeadDetailType, LeadListRow, LeadListStatus, LeadNote } from '@/db/queries/leads'
 
 export type LeadLayoutInitialMode = 'detail' | 'new-lead'
+
+/** DEMO ONLY — see lib/demo/details.ts. Undefined outside the static demo. */
+export interface LeadDemoBundle {
+  detail: LeadDetailType
+  notes: LeadNote[]
+}
 
 interface LeadLayoutProps {
   leads: LeadListRow[]
@@ -19,6 +26,8 @@ interface LeadLayoutProps {
   detail: LeadDetailType | null
   notes: LeadNote[]
   initialMode?: LeadLayoutInitialMode
+  /** DEMO ONLY — every row's detail, keyed by id, for client-side selection. */
+  demoDetails?: DemoDetails<LeadDemoBundle>
 }
 
 type RightPanelMode = 'detail' | 'new-lead' | 'edit-lead'
@@ -30,14 +39,24 @@ type RightPanelMode = 'detail' | 'new-lead' | 'edit-lead'
  */
 export default function LeadLayout({
   leads,
-  selectedId,
+  selectedId: serverSelectedId,
   status,
   search,
-  detail,
-  notes,
+  detail: serverDetail,
+  notes: serverNotes,
   initialMode = 'detail',
+  demoDetails,
 }: LeadLayoutProps) {
   const router = useRouter()
+
+  // Outside demo mode this is a pass-through of the server-resolved values.
+  const { selectedId, detail: bundle } = useDemoDetail<LeadDemoBundle>(
+    demoDetails,
+    serverSelectedId,
+    serverDetail ? { detail: serverDetail, notes: serverNotes } : null,
+  )
+  const detail = bundle?.detail ?? null
+  const notes = bundle?.notes ?? serverNotes
   const [mode, setMode] = useState<RightPanelMode>(initialMode)
   const [showConvertDialog, setShowConvertDialog] = useState(false)
 

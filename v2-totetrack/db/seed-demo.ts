@@ -85,8 +85,27 @@ function emailFor(person: string, company: string): string {
   return `${person.split(' ')[0]!.toLowerCase()}@${slug(company)}.com`
 }
 
-function phone(): string {
-  return `(${pick(['205', '251', '256', '334', '404', '470', '478', '678', '706', '770', '843', '864', '901', '931'])}) ${rand(200, 989)}-${String(rand(1000, 9999))}`
+// Area codes by state, so a Toledo plant does not answer on an Atlanta number.
+const AREA_CODES: Record<string, readonly string[]> = {
+  OH: ['216', '234', '330', '419', '440', '513', '567', '614', '740', '937'],
+  PA: ['412', '484', '570', '610', '717', '724', '814', '878'],
+  NY: ['315', '518', '585', '607', '716', '845'],
+  MI: ['231', '269', '313', '517', '586', '616', '734', '810', '906', '989'],
+  IN: ['219', '260', '317', '574', '765', '812'],
+  WV: ['304', '681'],
+  NC: ['336', '704', '828', '910', '919'],
+  IL: ['217', '309', '312', '618', '815'],
+  KY: ['270', '502', '606', '859'],
+  WI: ['262', '414', '608', '715', '920'],
+  MN: ['218', '320', '507', '651', '763'],
+}
+
+const FALLBACK_AREA_CODES = ['216', '330', '419', '614', '740'] as const
+
+function phoneIn(cityState: string): string {
+  const state = cityState.split(',').pop()!.trim()
+  const codes = AREA_CODES[state] ?? FALLBACK_AREA_CODES
+  return `(${pick(codes)}) ${rand(200, 989)}-${String(rand(1000, 9999))}`
 }
 
 /** Nudges a date off weekends — production and delivery happen on weekdays. */
@@ -117,6 +136,8 @@ const ROLES = [
   'Supply Chain Lead', 'Facilities Manager',
 ] as const
 
+// Long enough that no two customers share a contact — a repeated person
+// across unrelated companies is the kind of detail that reads as fabricated.
 const CONTACT_NAMES = [
   'Dana Whitfield', 'Marcus Okonkwo', 'Priya Raman', 'Tom Calloway',
   'Renata Vasquez', 'Ellis Brandt', 'Nadia Halloran', 'Owen Petrakis',
@@ -124,6 +145,12 @@ const CONTACT_NAMES = [
   'Ingrid Sandoval', 'Yusuf Karadag', 'Colette Duprey', 'Sal Moretti',
   'Beatrix Olander', 'Damaris Ocampo', 'Rory McKellen', 'Gita Bhattacharya',
   'Wes Hoffmeier', 'Odette Marchand', 'Hugo Vance', 'Marisol Quintero',
+  'Lena Trowbridge', 'Amara Nwachukwu', 'Douglas Pemberton', 'Ivo Kristensen',
+  'Rosa Villalobos', 'Ken Yamashita', 'Bridget Fallon', 'Emeka Balogun',
+  'Sylvie Rochon', 'Norman Ashcroft', 'Tanvi Deshpande', 'Grady Sutherland',
+  'Anneke de Vries', 'Miles Okafor', 'Paulina Zieliński', 'Cormac Delaney',
+  'Zara Haddad', 'Reuben Sandvik', 'Camille Aubert', 'Dev Chatterjee',
+  'Wendell Prosser', 'Fatima Zaidi', 'Gustav Lindholm', 'Naomi Ferreira',
 ] as const
 
 const ORDER_NOTES = [
@@ -273,8 +300,27 @@ const STREETS = [
   'Pressman St', 'Anodize Dr', 'Creamery Rd', 'Pumphouse Rd', 'Quarry Rd',
 ]
 
-function addressIn(city: string): string {
-  return `${rand(12, 4800)} ${pick(STREETS)}, ${city} ${rand(10000, 99999)}`
+// A random five-digit number puts an Idaho ZIP on a Pennsylvania address.
+// Real ZIP ranges per state keep the addresses internally consistent.
+const ZIP_RANGES: Record<string, [number, number]> = {
+  OH: [43000, 45999],
+  PA: [15000, 19699],
+  NY: [10001, 14999],
+  MI: [48000, 49971],
+  IN: [46000, 47997],
+  WV: [24700, 26886],
+  NC: [27006, 28909],
+  IL: [60001, 62999],
+  KY: [40003, 42788],
+  WI: [53001, 54990],
+  MN: [55001, 56763],
+}
+
+function addressIn(cityState: string): string {
+  const state = cityState.split(',').pop()!.trim()
+  const range = ZIP_RANGES[state]
+  const zip = range ? rand(range[0], range[1]) : rand(10000, 99999)
+  return `${rand(12, 4800)} ${pick(STREETS)}, ${cityState} ${String(zip).padStart(5, '0')}`
 }
 
 // ===== Connection =====
@@ -318,7 +364,7 @@ async function seedCustomers(): Promise<SeededCustomer[]> {
         name: person,
         role: i === 0 ? pick(['Procurement Manager', 'Plant Manager', 'Owner']) : pick(ROLES),
         email: emailFor(person, arch.name),
-        phone: phone(),
+        phone: phoneIn(arch.city),
         is_primary: i === 0,
       })
     }
@@ -582,26 +628,28 @@ interface LeadArchetype {
   name: string
   company: string
   title: string
+  /** Two-letter state. Leads carry no address; this only anchors the area code. */
+  state: string
   status: 'hot' | 'warm' | 'cold'
   daysUntilFollowUp: number | null
   noteCount: number
 }
 
 const LEAD_ARCHETYPES: LeadArchetype[] = [
-  { name: 'Elena Marchetti', company: 'Northgate Resin Partners', title: 'Procurement Director', status: 'hot', daysUntilFollowUp: -6, noteCount: 3 },
-  { name: 'Desmond Frye', company: 'Cobalt Line Solvents', title: 'Operations Lead', status: 'hot', daysUntilFollowUp: -2, noteCount: 3 },
-  { name: 'Junia Castellanos', company: 'Harrow Valley Cider', title: 'Owner', status: 'hot', daysUntilFollowUp: 0, noteCount: 2 },
-  { name: 'Ben Oyelaran', company: 'Prairie Fork Fertilizer', title: 'Purchasing Manager', status: 'hot', daysUntilFollowUp: 2, noteCount: 2 },
-  { name: 'Nadia Kirilenko', company: 'Sable Creek Detergents', title: 'Plant Manager', status: 'warm', daysUntilFollowUp: -1, noteCount: 2 },
-  { name: 'Roland Beaumont', company: 'Meridian Plating Supply', title: 'General Manager', status: 'warm', daysUntilFollowUp: 5, noteCount: 1 },
-  { name: 'Farrah Osman', company: 'Kestrel Labs Reagents', title: 'Sourcing Lead', status: 'warm', daysUntilFollowUp: 9, noteCount: 2 },
-  { name: 'Gunnar Sjoberg', company: 'Old Mill Flavor House', title: 'Operations Director', status: 'warm', daysUntilFollowUp: 16, noteCount: 1 },
-  { name: 'Tamsin Reyes', company: 'Bexley Road Sealants', title: 'Buyer', status: 'warm', daysUntilFollowUp: 23, noteCount: 1 },
-  { name: 'Achille Duval', company: 'Ironwood Pulp Chemicals', title: 'Supply Chain Lead', status: 'cold', daysUntilFollowUp: 34, noteCount: 1 },
-  { name: 'Petra Novakova', company: 'Sandhill Ag Cooperative', title: 'Procurement Agent', status: 'cold', daysUntilFollowUp: 45, noteCount: 0 },
-  { name: 'Isaiah Bergstrom', company: 'Cormorant Marine Coatings', title: 'Plant Manager', status: 'cold', daysUntilFollowUp: null, noteCount: 1 },
-  { name: 'Margit Hollander', company: 'Vale Street Brewing', title: 'Owner', status: 'cold', daysUntilFollowUp: null, noteCount: 0 },
-  { name: 'Terrence Amadi', company: 'Halloway Industrial Waxes', title: 'Facilities Manager', status: 'cold', daysUntilFollowUp: 60, noteCount: 1 },
+  { name: 'Elena Marchetti', company: 'Northgate Resin Partners', state: 'OH', title: 'Procurement Director', status: 'hot', daysUntilFollowUp: -6, noteCount: 3 },
+  { name: 'Desmond Frye', company: 'Cobalt Line Solvents', state: 'PA', title: 'Operations Lead', status: 'hot', daysUntilFollowUp: -2, noteCount: 3 },
+  { name: 'Junia Castellanos', company: 'Harrow Valley Cider', state: 'MI', title: 'Owner', status: 'hot', daysUntilFollowUp: 0, noteCount: 2 },
+  { name: 'Ben Oyelaran', company: 'Prairie Fork Fertilizer', state: 'IL', title: 'Purchasing Manager', status: 'hot', daysUntilFollowUp: 2, noteCount: 2 },
+  { name: 'Nadia Kirilenko', company: 'Sable Creek Detergents', state: 'KY', title: 'Plant Manager', status: 'warm', daysUntilFollowUp: -1, noteCount: 2 },
+  { name: 'Roland Beaumont', company: 'Meridian Plating Supply', state: 'NY', title: 'General Manager', status: 'warm', daysUntilFollowUp: 5, noteCount: 1 },
+  { name: 'Farrah Osman', company: 'Kestrel Labs Reagents', state: 'IN', title: 'Sourcing Lead', status: 'warm', daysUntilFollowUp: 9, noteCount: 2 },
+  { name: 'Gunnar Sjoberg', company: 'Old Mill Flavor House', state: 'NY', title: 'Operations Director', status: 'warm', daysUntilFollowUp: 16, noteCount: 1 },
+  { name: 'Tamsin Reyes', company: 'Bexley Road Sealants', state: 'OH', title: 'Buyer', status: 'warm', daysUntilFollowUp: 23, noteCount: 1 },
+  { name: 'Achille Duval', company: 'Ironwood Pulp Chemicals', state: 'WI', title: 'Supply Chain Lead', status: 'cold', daysUntilFollowUp: 34, noteCount: 1 },
+  { name: 'Petra Novakova', company: 'Sandhill Ag Cooperative', state: 'MI', title: 'Procurement Agent', status: 'cold', daysUntilFollowUp: 45, noteCount: 0 },
+  { name: 'Isaiah Bergstrom', company: 'Cormorant Marine Coatings', state: 'MN', title: 'Plant Manager', status: 'cold', daysUntilFollowUp: null, noteCount: 1 },
+  { name: 'Margit Hollander', company: 'Vale Street Brewing', state: 'OH', title: 'Owner', status: 'cold', daysUntilFollowUp: null, noteCount: 0 },
+  { name: 'Terrence Amadi', company: 'Halloway Industrial Waxes', state: 'WV', title: 'Facilities Manager', status: 'cold', daysUntilFollowUp: 60, noteCount: 1 },
 ]
 
 async function seedLeads(customerSeeds: SeededCustomer[]): Promise<void> {
@@ -612,7 +660,7 @@ async function seedLeads(customerSeeds: SeededCustomer[]): Promise<void> {
       title: a.title,
       company: a.company,
       email: emailFor(a.name, a.company),
-      phone: maybe(0.8) ? phone() : null,
+      phone: maybe(0.8) ? phoneIn(a.state) : null,
       status: a.status,
       lead_source: pick(LEAD_SOURCES),
       next_follow_up_date: followUp,
@@ -639,7 +687,7 @@ async function seedLeads(customerSeeds: SeededCustomer[]): Promise<void> {
       title: pick(ROLES),
       company: customer.name,
       email: emailFor(person, customer.name),
-      phone: phone(),
+      phone: phoneIn(customer.city),
       status: 'converted',
       lead_source: pick(LEAD_SOURCES),
       converted_customer_id: customer.id,
@@ -762,6 +810,15 @@ async function report(): Promise<void> {
     await check(
       `no orders in ${format(monthStart, 'yyyy-MM')} — the revenue chart would have a gap`,
       `SELECT count(*) FROM orders WHERE requested_delivery_date >= '${isoDate(monthStart)}' AND requested_delivery_date < '${isoDate(nextStart)}'`,
+    )
+  }
+
+  const dupContacts = (await client.unsafe(
+    'SELECT count(*)::int AS count FROM (SELECT name FROM customer_contacts GROUP BY name HAVING count(*) > 1) d',
+  )) as unknown as Array<{ count: number }>
+  if ((dupContacts[0]?.count ?? 0) > 0) {
+    problems.push(
+      `${dupContacts[0]!.count} contact name(s) appear at more than one customer — a repeated person across unrelated companies reads as fabricated`,
     )
   }
 

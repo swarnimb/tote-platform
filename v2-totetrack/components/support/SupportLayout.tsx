@@ -6,10 +6,14 @@ import TicketList from './TicketList'
 import TicketDetail from './TicketDetail'
 import type { TicketDetail as TicketDetailType, TicketListRow } from '@/db/queries/support'
 
+import { useDemoDetail, type DemoDetails } from '@/lib/demo/details'
+
 interface SupportLayoutProps {
   tickets: TicketListRow[]
   selectedId: string | null
   detail: TicketDetailType | null
+  /** DEMO ONLY — every row's detail, keyed by id, for client-side selection. */
+  demoDetails?: DemoDetails<TicketDetailType>
 }
 
 /**
@@ -20,7 +24,18 @@ interface SupportLayoutProps {
  * form takes the panel back. Mirrors the LeadLayout / InvoiceLayout
  * structure.
  */
-export default function SupportLayout({ tickets, selectedId, detail }: SupportLayoutProps) {
+export default function SupportLayout({
+  tickets,
+  selectedId: serverSelectedId,
+  detail: serverDetail,
+  demoDetails,
+}: SupportLayoutProps) {
+  // Outside demo mode this is a pass-through of the server-resolved values.
+  const { selectedId, detail } = useDemoDetail<TicketDetailType>(
+    demoDetails,
+    serverSelectedId,
+    serverDetail,
+  )
   const router = useRouter()
   const handleNew = () => router.push('/support')
 

@@ -21,16 +21,36 @@ const OUT_ROOT = join(HERE, '..', 'assets', 'v2-totetrack')
 // Matches the widths used for the v1 capture so the before/after pairs line up.
 const VIEWPORTS = { 'desktop-1280': 1280, 'ipad-768': 768 }
 
+// `select` names screens whose right-hand pane only fills once a row is
+// chosen. Capturing them untouched ships a screenshot of an empty state.
 const ROUTES = [
   ['00-login', '/login/'],
   ['01-dashboard', '/dashboard/'],
-  ['02-customers', '/customers/'],
-  ['03-orders', '/orders/'],
-  ['04-leads', '/leads/'],
+  ['02-customers', '/customers/', { select: 'Select a customer to view details.' }],
+  ['03-orders', '/orders/', { select: 'Select an order to view details.' }],
+  ['04-leads', '/leads/', { select: 'Select a lead to view details.' }],
   ['05-invoices', '/invoices/'],
   ['06-calendar', '/calendar/'],
-  ['07-support', '/support/'],
+  // Support's right pane defaults to the new-ticket form rather than an empty
+  // state, so it is never blank — but the ticket detail is the better shot.
+  ['07-support', '/support/', { select: 'Select an issue to view details.' }],
 ]
+
+/**
+ * Clicks the first row of a master/detail screen and verifies the detail pane
+ * actually filled. Throws rather than shipping a screenshot of an empty state.
+ */
+async function selectFirstRow(page, emptyStateText) {
+  // Customers, leads and tickets render rows as buttons in a list; orders
+  // render them as clickable table rows.
+  const row = page.locator('ul li button, ul li a, tbody tr[tabindex]').first()
+  if (!(await row.count())) throw new Error('no selectable rows found')
+  await row.click()
+  await page.waitForTimeout(1500)
+  if (await page.getByText(emptyStateText, { exact: false }).count()) {
+    throw new Error(`detail pane still empty after selecting a row (${emptyStateText})`)
+  }
+}
 
 // The dashboard's revenue chart ships collapsed. Screenshotting it as-is
 // leaves an empty card where the twelve-month trend should be.
@@ -85,8 +105,11 @@ for (const [vpName, width] of Object.entries(VIEWPORTS)) {
     if (msg.type() === 'error') consoleErrors.push(`[${vpName}] ${msg.text()}`)
   })
 
-  for (const [label, path] of ROUTES) {
-    await capture(page, label, path, outDir, label === '01-dashboard' ? expandRevenueChart : undefined)
+  for (const [label, path, opts] of ROUTES) {
+    let hook
+    if (label === '01-dashboard') hook = expandRevenueChart
+    else if (opts?.select) hook = (p) => selectFirstRow(p, opts.select)
+    await capture(page, label, path, outDir, hook)
   }
   await ctx.close()
 }

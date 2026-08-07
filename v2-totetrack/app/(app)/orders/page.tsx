@@ -9,6 +9,8 @@ import { OrderNotFoundError } from '@/lib/errors'
 import { parseInitialMode } from '@/lib/parse-initial-mode'
 import OrderLayout from '@/components/orders/OrderLayout'
 import PageTransition from '@/components/shell/PageTransition'
+import { Suspense } from 'react'
+import { IS_DEMO } from '@/lib/demo/flag'
 
 // `pending` is gone (v2 model). `invoiced` is folded into the `completed`
 // filter — `getOrders` matches `status IN ('completed', 'invoiced')` on that
@@ -76,18 +78,43 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     getActiveCustomersForSelect(),
   ])
 
+  const demoDetails = IS_DEMO
+    ? await loadAllDetailsForDemo(listResult.rows.map((o) => o.id))
+    : undefined
+
+  const layout = (
+    <OrderLayout
+      orders={listResult.rows}
+      status={status}
+      search={search}
+      selectedId={selectedId}
+      detail={detail}
+      customers={customers}
+      initialMode={initialMode}
+      lockedCustomerId={lockedCustomerId}
+      demoDetails={demoDetails}
+    />
+  )
+
   return (
     <PageTransition>
-      <OrderLayout
-        orders={listResult.rows}
-        status={status}
-        search={search}
-        selectedId={selectedId}
-        detail={detail}
-        customers={customers}
-        initialMode={initialMode}
-        lockedCustomerId={lockedCustomerId}
-      />
+      {/* A static export requires a Suspense boundary around the
+          useSearchParams() call the demo selection hook makes. */}
+      {IS_DEMO ? <Suspense fallback={null}>{layout}</Suspense> : layout}
     </PageTransition>
   )
+}
+
+/**
+ * DEMO ONLY — the static export cannot resolve `?id=` on the server, so every
+ * row's detail is prerendered into the page and picked client-side.
+ */
+async function loadAllDetailsForDemo(ids: string[]): Promise<Record<string, OrderDetail>> {
+  const entries = await Promise.all(
+    ids.map(async (id) => {
+      const detail = await loadOrderDetail(id)
+      return detail ? ([id, detail] as const) : null
+    }),
+  )
+  return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, OrderDetail]>)
 }

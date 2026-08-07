@@ -13,8 +13,10 @@ import {
 } from '@/db/queries/customers'
 import { CustomerNotFoundError } from '@/lib/errors'
 import { parseInitialMode } from '@/lib/parse-initial-mode'
-import CustomerLayout from '@/components/customers/CustomerLayout'
+import CustomerLayout, { type CustomerDemoBundle } from '@/components/customers/CustomerLayout'
 import PageTransition from '@/components/shell/PageTransition'
+import { Suspense } from 'react'
+import { IS_DEMO } from '@/lib/demo/flag'
 
 const VALID_SORTS: readonly CustomerListSort[] = ['alphabetical', 'order_count', 'need_to_contact']
 const VALID_WINDOWS: readonly CustomerOrdersWindow[] = ['1M', '3M', '6M', '1Y', 'YTD']
@@ -110,20 +112,47 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
     selectedId ? loadCustomerDetail(selectedId, window) : Promise.resolve(EMPTY_DETAIL_RESULT),
   ])
 
+  const demoDetails = IS_DEMO ? await loadAllDetailsForDemo(customers.map((c) => c.id), window) : undefined
+
+  const layout = (
+    <CustomerLayout
+      customers={customers}
+      selectedId={selectedId}
+      status={status}
+      search={search}
+      sort={sort}
+      detail={detailResult.detail}
+      orders={detailResult.orders}
+      window={window}
+      volumeOverview={detailResult.volumeOverview}
+      initialMode={initialMode}
+      demoDetails={demoDetails}
+    />
+  )
+
   return (
     <PageTransition>
-      <CustomerLayout
-        customers={customers}
-        selectedId={selectedId}
-        status={status}
-        search={search}
-        sort={sort}
-        detail={detailResult.detail}
-        orders={detailResult.orders}
-        window={window}
-        volumeOverview={detailResult.volumeOverview}
-        initialMode={initialMode}
-      />
+      {/* A static export requires a Suspense boundary around the
+          useSearchParams() call the demo selection hook makes. */}
+      {IS_DEMO ? <Suspense fallback={null}>{layout}</Suspense> : layout}
     </PageTransition>
   )
+}
+
+/**
+ * DEMO ONLY — the static export cannot resolve `?id=` on the server, so every
+ * row's detail is prerendered into the page and picked client-side. Only the
+ * default orders window is fetched; switching windows is inert in the demo.
+ */
+async function loadAllDetailsForDemo(
+  ids: string[],
+  window: CustomerOrdersWindow,
+): Promise<Record<string, CustomerDemoBundle>> {
+  const entries = await Promise.all(
+    ids.map(async (id) => {
+      const { detail, orders, volumeOverview } = await loadCustomerDetail(id, window)
+      return detail ? ([id, { detail, orders, volumeOverview }] as const) : null
+    }),
+  )
+  return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, CustomerDemoBundle]>)
 }

@@ -1,0 +1,8 @@
+# DEMO ONLY — extra dependencies for the demo tooling in this repo.
+# Not required to run Tote-Ops itself; see requirements.txt for that.
+#
+#   pip install -r requirements-demo.txt
+#   playwright install chromium
+#
+# Used by screenshot_demo.py to capture the v1 asset set.
+playwright

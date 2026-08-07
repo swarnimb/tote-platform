@@ -6,6 +6,7 @@ import CustomerList from './CustomerList'
 import CustomerDetail, { CustomerDetailEmptyState } from './CustomerDetail'
 import CustomerForm from './CustomerForm'
 import DetailDrawer from '@/components/shell/DetailDrawer'
+import { useDemoDetail, type DemoDetails } from '@/lib/demo/details'
 import type {
   CustomerDetail as CustomerDetailType,
   CustomerListRow,
@@ -18,6 +19,13 @@ import type {
 
 export type CustomerLayoutInitialMode = 'detail' | 'new-customer'
 
+/** DEMO ONLY — see lib/demo/details.ts. Undefined outside the static demo. */
+export interface CustomerDemoBundle {
+  detail: CustomerDetailType
+  orders: CustomerOrderRow[]
+  volumeOverview: VolumeOverview
+}
+
 interface CustomerLayoutProps {
   customers: CustomerListRow[]
   selectedId: string | null
@@ -29,6 +37,8 @@ interface CustomerLayoutProps {
   window: CustomerOrdersWindow
   volumeOverview: VolumeOverview
   initialMode?: CustomerLayoutInitialMode
+  /** DEMO ONLY — every row's detail, keyed by id, for client-side selection. */
+  demoDetails?: DemoDetails<CustomerDemoBundle>
 }
 
 type RightPanelMode = 'detail' | 'new-customer' | 'edit-customer'
@@ -42,17 +52,29 @@ type RightPanelMode = 'detail' | 'new-customer' | 'edit-customer'
  */
 export default function CustomerLayout({
   customers,
-  selectedId,
+  selectedId: serverSelectedId,
   status,
   search,
   sort,
-  detail,
-  orders,
+  detail: serverDetail,
+  orders: serverOrders,
   window,
-  volumeOverview,
+  volumeOverview: serverVolumeOverview,
   initialMode = 'detail',
+  demoDetails,
 }: CustomerLayoutProps) {
   const router = useRouter()
+
+  // Outside demo mode this is a pass-through of the server-resolved values.
+  const { selectedId, detail: bundle } = useDemoDetail<CustomerDemoBundle>(
+    demoDetails,
+    serverSelectedId,
+    serverDetail ? { detail: serverDetail, orders: serverOrders, volumeOverview: serverVolumeOverview } : null,
+  )
+  const detail = bundle?.detail ?? null
+  const orders = bundle?.orders ?? serverOrders
+  const volumeOverview = bundle?.volumeOverview ?? serverVolumeOverview
+
   const [mode, setMode] = useState<RightPanelMode>(initialMode)
   const openNewCustomer = useCallback(() => setMode('new-customer'), [])
   const openEditCustomer = useCallback(() => setMode('edit-customer'), [])

@@ -6,6 +6,7 @@ import OrderTable from './OrderTable'
 import OrderDetail from './OrderDetail'
 import OrderForm from './OrderForm'
 import DetailDrawer from '@/components/shell/DetailDrawer'
+import { useDemoDetail, type DemoDetails } from '@/lib/demo/details'
 import type {
   OrderDetail as OrderDetailType,
   OrderListStatus,
@@ -21,6 +22,8 @@ interface OrderLayoutProps {
   search: string
   selectedId: string | null
   detail: OrderDetailType | null
+  /** DEMO ONLY — every row's detail, keyed by id, for client-side selection. */
+  demoDetails?: DemoDetails<OrderDetailType>
   customers: CustomerSelectOption[]
   initialMode: OrderLayoutInitialMode
   lockedCustomerId: string | null
@@ -39,13 +42,21 @@ export default function OrderLayout({
   orders,
   status,
   search,
-  selectedId,
-  detail,
+  selectedId: serverSelectedId,
+  detail: serverDetail,
   customers,
   initialMode,
   lockedCustomerId,
+  demoDetails,
 }: OrderLayoutProps) {
   const router = useRouter()
+
+  // Outside demo mode this is a pass-through of the server-resolved values.
+  const { selectedId, detail } = useDemoDetail<OrderDetailType>(
+    demoDetails,
+    serverSelectedId,
+    serverDetail,
+  )
   const [mode, setMode] = useState<RightPanelMode>(initialMode)
   const openNewOrder = useCallback(() => setMode('new-order'), [])
   const openEditOrder = useCallback(() => setMode('edit-order'), [])
