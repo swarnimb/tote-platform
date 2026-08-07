@@ -668,10 +668,14 @@ async function seedLeads(customerSeeds: SeededCustomer[]): Promise<void> {
       created_at: subDays(TODAY, rand(20, 420)),
     }).returning({ id: leads.id })
 
-    for (let i = 0; i < a.noteCount; i++) {
+    // Drawn without replacement — the same sentence twice in one lead's note
+    // history is an obvious tell, and the detail pane shows them stacked.
+    const notePool = [...LEAD_NOTE_SAMPLES]
+    for (let i = 0; i < a.noteCount && notePool.length; i++) {
+      const [content] = notePool.splice(rand(0, notePool.length - 1), 1)
       await db.insert(leadNotes).values({
         lead_id: row!.id,
-        content: pick(LEAD_NOTE_SAMPLES),
+        content: content!,
         created_at: subDays(TODAY, rand(2, 120)),
       })
     }
@@ -810,6 +814,15 @@ async function report(): Promise<void> {
     await check(
       `no orders in ${format(monthStart, 'yyyy-MM')} — the revenue chart would have a gap`,
       `SELECT count(*) FROM orders WHERE requested_delivery_date >= '${isoDate(monthStart)}' AND requested_delivery_date < '${isoDate(nextStart)}'`,
+    )
+  }
+
+  const dupNotes = (await client.unsafe(
+    'SELECT count(*)::int AS count FROM (SELECT lead_id, content FROM lead_notes GROUP BY lead_id, content HAVING count(*) > 1) d',
+  )) as unknown as Array<{ count: number }>
+  if ((dupNotes[0]?.count ?? 0) > 0) {
+    problems.push(
+      `${dupNotes[0]!.count} lead(s) have the same note twice — the detail pane stacks them, so the repeat is obvious`,
     )
   }
 

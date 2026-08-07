@@ -102,8 +102,8 @@ Customers, contacts, orders, leads, lead notes, invoices, support tickets, attac
 **T9. [x] Static export config**
 Folded into `next.config.js` behind `NEXT_PUBLIC_DEMO_MODE` rather than a separate `next.config.demo.mjs`, so the production config path stays byte-identical with the flag unset: `output: 'export'`, `basePath: '/tote-platform'`, `images.unoptimized`, `trailingSlash`.
 
-**T10. [ ] Deploy to GitHub Pages**
-`deploy-demo.yml` is written and the schema/seed/build chain it runs is verified end to end against a fresh database locally. Still open: create the GitHub repo, push, enable Pages, and verify the live URL — no 404s on basePath assets, no console errors, every route renders.
+**T10. [x] Deploy to GitHub Pages**
+`deploy-demo.yml` builds against a Postgres service container and publishes to Pages. Repo created at `github.com/swarnimb/tote-platform` (public), Pages set to the workflow build type, deploy green, live at https://swarnimb.github.io/tote-platform/ — root, `/dashboard/` and `/calendar/` all 200, no basePath 404s, no console errors on any route.
 
 **T11. [x] Screenshot every v2 screen**
 Dashboard, customers, orders, leads, invoices, calendar, support. Same widths as T6.
@@ -115,6 +115,13 @@ Matched screens only: Dashboard, Leads, Invoices. Remaining v2 screens ship as s
 
 **T13. [x] README**
 What the repo is, the live demo link, the v1/v2 framing, a note that all data is synthetic.
+
+---
+
+## Found during the build, fixed
+
+- **Detail panes could never open.** Customers, orders, leads and support resolve their right-hand pane on the server from `?id=`. A static export has no request, so `searchParams` is always empty at build — every one of those panes prerendered as an empty state and clicking a row appeared to do nothing. Fixed by prefetching every row's detail into the page in demo mode and selecting client-side (`lib/demo/details.ts`).
+- **Seed tells the screenshots exposed.** Random five-digit ZIPs put an Idaho ZIP on a Pennsylvania address; phone area codes were all Southeast for Midwest companies; one contact appeared at two unrelated companies; one lead had the same note twice. All four now derive from the record's own state or are drawn without replacement, and each has a coverage assertion so they cannot regress.
 
 ---
 

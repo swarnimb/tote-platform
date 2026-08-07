@@ -34,10 +34,12 @@ const PAIRS = [
 
 const VIEWPORTS = ['desktop-1280', 'ipad-768']
 
-// Each panel is capped so a very tall page does not squash its partner. The
-// pair is what matters, not the full scroll of either side.
+// Both panels are cropped to the same height from the top. Letting each run
+// to its natural length left one side towering over the other with a large
+// dead area beside it — the pair is what matters, not the full scroll of
+// either side.
 const PANEL_WIDTH = 900
-const PANEL_MAX_HEIGHT = 1400
+const PANEL_HEIGHT = 1100
 
 async function dataUri(path) {
   const buf = await readFile(path)
@@ -65,22 +67,25 @@ function page(beforeSrc, afterSrc, title) {
   .tag.before { background: #7f1d1d; color: #fecaca; }
   .tag.after  { background: #064e3b; color: #a7f3d0; }
   .app { color: #94a3b8; font-size: 14px; }
-  .shot {
-    width: 100%; max-height: ${PANEL_MAX_HEIGHT}px; object-fit: cover; object-position: top;
-    border-radius: 12px; display: block; border: 1px solid #1e293b;
+  /* Clipping via a fixed-height frame rather than object-fit: cover — cover
+     crops horizontally too, which sliced columns off the wider screenshot. */
+  .frame {
+    height: ${PANEL_HEIGHT}px; overflow: hidden; background: #f0f3f7;
+    border-radius: 12px; border: 1px solid #1e293b;
     box-shadow: 0 18px 40px rgba(0,0,0,.45);
   }
+  .shot { width: 100%; height: auto; display: block; }
 </style></head>
 <body>
   <h1>${title}</h1>
   <div class="row">
     <div class="panel">
       <div class="label"><span class="tag before">Before</span><span class="app">Tote-Ops · v1</span></div>
-      <img class="shot" src="${beforeSrc}" />
+      <div class="frame"><img class="shot" src="${beforeSrc}" /></div>
     </div>
     <div class="panel">
       <div class="label"><span class="tag after">After</span><span class="app">ToteTrack · v2</span></div>
-      <img class="shot" src="${afterSrc}" />
+      <div class="frame"><img class="shot" src="${afterSrc}" /></div>
     </div>
   </div>
 </body></html>`
