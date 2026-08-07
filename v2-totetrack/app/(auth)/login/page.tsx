@@ -4,7 +4,10 @@ import LoginForm from '@/components/auth/LoginForm'
 
 // Reads session cookies to decide whether to redirect an already-logged-in
 // user to /dashboard — must resolve per-request, not at build time.
-export const dynamic = 'force-dynamic'
+// DEMO ONLY: see the note in app/(app)/layout.tsx. Unset outside the demo
+// build, where this evaluates to 'force-dynamic' as before.
+export const dynamic =
+  process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? 'force-static' : 'force-dynamic'
 
 export default async function LoginPage() {
   const supabase = createClient()
