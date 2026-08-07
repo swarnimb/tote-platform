@@ -54,6 +54,7 @@
     "eslint": "^8",
     "eslint-config-next": "^14.2.29",
     "jsdom": "^29.0.2",
+    "playwright": "^1.49.0",
     "postcss": "latest",
     "tailwindcss": "^4.2.3",
     "tsx": "^4.19.2",
