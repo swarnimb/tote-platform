@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Gradeouts — ToteOps{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <h1 style="font-size:22px; font-weight:700; color:#111827; margin:0;">Gradeouts</h1>
+  <a href="/gradeouts/new" style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center;">+ New Gradeout</a>
+</div>
+
+<!-- Filter bar -->
+<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+  <select id="filter-supplier" onchange="applyFilters()"
+    style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; min-height:44px; outline:none; background:#fff;">
+    <option value="">All Suppliers</option>
+    {% for s in suppliers %}
+    <option value="{{ s.id }}" {% if filter_supplier == s.id %}selected{% endif %}>{{ s.company_name }}</option>
+    {% endfor %}
+  </select>
+  <input type="month" id="filter-month" value="{{ filter_month }}" onchange="applyFilters()"
+    style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; min-height:44px; outline:none;" />
+</div>
+
+<!-- Gradeouts table -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+          <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Date</th>
+          <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Supplier</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">275 Usable</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">330 Usable</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Revenue</th>
+          <th style="padding:10px 16px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if gradeouts %}
+          {% for g in gradeouts %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#6b7280; padding:12px 16px; white-space:nowrap;">{{ g.date_received }}</td>
+            <td style="font-size:13px; font-weight:500; color:#111827; padding:12px 16px;">
+              <a href="/suppliers/{{ g.supplier_id }}" style="color:#111827; text-decoration:none;">{{ g.supplier.company_name }}</a>
+            </td>
+            <td style="font-size:13px; color:#111827; padding:12px 16px; text-align:right;">{{ g.totes_275_total_usable }}</td>
+            <td style="font-size:13px; color:#111827; padding:12px 16px; text-align:right;">{{ g.totes_330_total_usable }}</td>
+            <td style="font-size:13px; font-weight:600; color:#16a34a; padding:12px 16px; text-align:right;">
+              ${{ ((g.totes_275_total_usable + g.totes_330_total_usable) * tote_rate) | int }}
+            </td>
+            <td style="padding:10px 16px; text-align:right; white-space:nowrap;">
+              <a href="/gradeouts/{{ g.id }}/edit"
+                style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:32px; text-decoration:none; display:inline-flex; align-items:center; margin-right:6px;">Edit</a>
+              <button hx-delete="/gradeouts/{{ g.id }}" hx-confirm="Delete this gradeout? This cannot be undone."
+                style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:32px;">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center; padding:40px 16px; font-size:13px; color:#9ca3af;">
+            No gradeouts yet. <a href="/gradeouts/new" style="color:#2563eb;">Add your first gradeout.</a>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function applyFilters() {
+    var s = document.getElementById('filter-supplier').value;
+    var m = document.getElementById('filter-month').value;
+    var params = [];
+    if (s) params.push('supplier_id=' + encodeURIComponent(s));
+    if (m) params.push('month=' + encodeURIComponent(m));
+    window.location = '/gradeouts' + (params.length ? '?' + params.join('&') : '');
+  }
+</script>
+
+{% endblock %}

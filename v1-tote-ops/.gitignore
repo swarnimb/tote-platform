@@ -1,0 +1,38 @@
+# Claude framework — never commit
+CLAUDE.md
+manifest.md
+profile.md
+content/
+docs/testing-setup.md
+docs/session-log.md
+docs/session-handoff.md
+docs/framework-issues.md
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+# .env.example is allowed — no real values
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Uploads (stored in Supabase Storage, not locally)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local artifacts
+.playwright-mcp/
+memory/

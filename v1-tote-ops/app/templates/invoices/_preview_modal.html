@@ -1,0 +1,58 @@
+<!-- HTMX partial — fragment only, no extends tag -->
+<div style="position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; display:flex; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; margin:0 16px;">
+
+    <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0 0 20px;">
+      Invoice Preview — {{ month.strftime('%B %Y') }}
+    </h2>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:8px 12px;">Supplier</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:8px 12px;">Address</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:8px 12px;">Date</th>
+            <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:8px 12px;">Usable</th>
+            <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:8px 12px;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in preview.rows %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#111827; padding:8px 12px;">{{ row.supplier }}</td>
+            <td style="font-size:13px; color:#6b7280; padding:8px 12px;">{{ row.city_state }}</td>
+            <td style="font-size:13px; color:#6b7280; padding:8px 12px; white-space:nowrap;">{{ row.date.strftime('%b %d, %Y') }}</td>
+            <td style="font-size:13px; color:#111827; padding:8px 12px; text-align:right;">{{ row.total_usable }}</td>
+            <td style="font-size:13px; font-weight:600; color:#16a34a; padding:8px 12px; text-align:right;">${{ row.revenue | int }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #e5e7eb; background:#f9fafb;">
+            <td colspan="3" style="font-size:13px; font-weight:600; color:#111827; padding:8px 12px;">
+              Total — {{ preview.totals.gradeout_count }} gradeout{{ 's' if preview.totals.gradeout_count != 1 else '' }}
+            </td>
+            <td style="font-size:13px; font-weight:600; color:#111827; padding:8px 12px; text-align:right;">{{ preview.totals.total_usable }}</td>
+            <td style="font-size:13px; font-weight:700; color:#16a34a; padding:8px 12px; text-align:right;">${{ preview.totals.total_revenue | int }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:24px; flex-wrap:wrap;">
+      <button onclick="document.getElementById('modal-container').innerHTML=''"
+        style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">
+        Back to Invoices
+      </button>
+      <form hx-post="/invoices/generate-or-confirm" hx-target="#modal-container" hx-swap="innerHTML" style="display:contents;">
+        <input type="hidden" name="month" value="{{ month.strftime('%Y-%m') }}">
+        <button type="submit"
+          style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">
+          Generate
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>

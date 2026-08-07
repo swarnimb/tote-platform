@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}{{ supplier.company_name }} — ToteOps{% endblock %}
+
+{% block content %}
+
+<!-- Back link -->
+<a href="/suppliers" style="font-size:13px; color:#6b7280; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:16px; min-height:44px;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Suppliers
+</a>
+
+<!-- Page header -->
+<div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+      <h1 style="font-size:22px; font-weight:700; color:#111827; margin:0;">{{ supplier.company_name }}</h1>
+      {% if supplier.is_hazmat %}<span style="background:#fef2f2; color:#dc2626; border-radius:9999px; font-size:11px; font-weight:500; padding:2px 8px;">Hazmat</span>{% endif %}
+      {% if not supplier.is_active %}<span style="background:#f3f4f6; color:#6b7280; border-radius:9999px; font-size:11px; font-weight:500; padding:2px 8px;">Inactive</span>{% endif %}
+    </div>
+    <p style="font-size:14px; color:#6b7280; margin:0;">{{ supplier.location }}</p>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a href="{{ followup_sms }}" style="background:{% if supplier.phone %}#16a34a{% else %}#9ca3af{% endif %}; color:#fff; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Text
+    </a>
+    <a href="{{ followup_mailto }}" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Email
+    </a>
+    <button onclick="document.getElementById('edit-modal').style.display='flex'" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Edit</button>
+    <form method="post" action="/suppliers/{{ supplier.id }}/toggle-active" style="display:inline;">
+      {% if supplier.is_active %}
+      <button type="submit" style="background:#fff; border:1px solid #d1d5db; color:#6b7280; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Set Inactive</button>
+      {% else %}
+      <button type="submit" style="background:#fff; border:1px solid #16a34a; color:#16a34a; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Set Active</button>
+      {% endif %}
+    </form>
+    <button onclick="document.getElementById('delete-modal').style.display='flex'" style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Delete</button>
+    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+      <form method="post" action="/pickups" style="margin:0;">
+        <input type="hidden" name="supplier_id" value="{{ supplier.id }}">
+        <button type="submit" style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Confirm Pickup</button>
+      </form>
+      {% if confirmed_pickup_count > 0 %}
+      <span style="font-size:12px; color:#f59e0b; font-weight:500;">{{ confirmed_pickup_count }} pickup(s) confirmed — awaiting gradeout</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Info grid -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+
+  <!-- Contact card -->
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+    <p style="font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 14px 0;">Contact</p>
+    <dl style="display:grid; grid-template-columns:auto 1fr; gap:10px 16px; font-size:13px; margin:0;">
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Name</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.contact_name or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Phone</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.phone or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Email</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.email or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">BOL Email</dt>
+      <dd style="color:#111827; margin:0;">{% if supplier.bol_same_as_primary %}Same as contact{% else %}{{ supplier.bol_email or '—' }}{% endif %}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Follow-up</dt>
+      <dd style="margin:0;">
+        <form hx-post="/suppliers/{{ supplier.id }}/followup-weeks" hx-trigger="change" hx-swap="none" style="margin:0;">
+          <select name="followup_weeks" style="border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:13px; color:#111827; outline:none; background:#fff;">
+            {% for w in range(1, 11) %}
+            <option value="{{ w }}" {% if supplier.followup_weeks == w %}selected{% endif %}>{{ w }} week{% if w > 1 %}s{% endif %}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Last Pickup</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.last_pickup_date or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Last Action</dt>
+      <dd style="margin:0;">
+        <select
+          name="last_action_stage"
+          data-supplier-id="{{ supplier.id }}"
+          data-supplier-name="{{ supplier.company_name | e }}"
+          data-previous-value="{{ supplier.last_action_stage or '' }}"
+          onmousedown="handleActionStageMousedown(this)"
+          onchange="handleActionStageChange(this)"
+          style="border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:13px; color:#111827; outline:none; background:#fff;">
+          <option value="" {% if not supplier.last_action_stage %}selected{% endif %}>—</option>
+          <option value="followed_up" {% if supplier.last_action_stage == 'followed_up' %}selected{% endif %}>Followed Up</option>
+          <option value="responded_no" {% if supplier.last_action_stage == 'responded_no' %}selected{% endif %}>Responded No</option>
+          <option value="pickup_confirmed" {% if supplier.last_action_stage == 'pickup_confirmed' %}selected{% endif %}>Pickup Confirmed</option>
+          <option value="maybe" {% if supplier.last_action_stage == 'maybe' %}selected{% endif %}>Maybe — Follow Up Later</option>
+        </select>
+        {% if supplier.last_action_date %}<div style="font-size:12px; color:#9ca3af; margin-top:3px;">{{ supplier.last_action_date }}</div>{% endif %}
+      </dd>
+    </dl>
+  </div>
+
+  <!-- Operations card -->
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+    <p style="font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 14px 0;">Operations</p>
+    <dl style="display:grid; grid-template-columns:auto 1fr; gap:10px 16px; font-size:13px; margin:0;">
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Industry</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.industry or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Avg 275 W/C</dt>
+      <dd style="color:#111827; margin:0;">{% if gradeout_stats %}{{ gradeout_stats.avg_275_washable }}/{{ gradeout_stats.avg_275_cage }}{% else %}—{% endif %}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Avg 330 W/C</dt>
+      <dd style="color:#111827; margin:0;">{% if gradeout_stats %}{{ gradeout_stats.avg_330_washable }}/{{ gradeout_stats.avg_330_cage }}{% else %}—{% endif %}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Hours</dt>
+      <dd style="color:#111827; margin:0;">{{ supplier.working_hours or '—' }}</dd>
+      <dt style="color:#6b7280; font-weight:500; white-space:nowrap;">Quality Rate</dt>
+      <dd style="color:#111827; margin:0;">{% if quality_rate is not none %}{{ quality_rate }}%{% else %}—{% endif %}</dd>
+    </dl>
+  </div>
+
+</div>
+
+{% if supplier.warnings or supplier.notes %}
+<!-- Notes / Warnings -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px; margin-bottom:16px;">
+  <p style="font-size:11px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 14px 0;">Notes &amp; Warnings</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    {% if supplier.warnings %}
+    <div>
+      <p style="font-size:12px; font-weight:500; color:#6b7280; margin:0 0 6px 0;">WARNINGS</p>
+      <p style="font-size:13px; color:#111827; margin:0; white-space:pre-wrap;">{{ supplier.warnings }}</p>
+    </div>
+    {% endif %}
+    {% if supplier.notes %}
+    <div>
+      <p style="font-size:12px; font-weight:500; color:#6b7280; margin:0 0 6px 0;">NOTES</p>
+      <p style="font-size:13px; color:#111827; margin:0; white-space:pre-wrap;">{{ supplier.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Edit Modal -->
+<div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; align-items:flex-start; justify-content:center; padding:24px 16px; overflow-y:auto;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:560px; position:relative;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0;">Edit Supplier</h2>
+      <button type="button" onclick="document.getElementById('edit-modal').style.display='none'" style="background:none; border:none; cursor:pointer; color:#6b7280; padding:4px; font-size:20px; min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+    </div>
+
+    <form hx-put="/suppliers/{{ supplier.id }}">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-bottom:16px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Company Name <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="company_name" value="{{ supplier.company_name }}" required style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Location <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="location" value="{{ supplier.location }}" required style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Contact Name</label>
+          <input type="text" name="contact_name" value="{{ supplier.contact_name or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Phone</label>
+          <input type="text" name="phone" value="{{ supplier.phone or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Contact Email</label>
+          <input type="email" name="email" value="{{ supplier.email or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Industry</label>
+          <input type="text" name="industry" value="{{ supplier.industry or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Avg Qty 275</label>
+          <input type="text" name="average_quantity_275" value="{{ supplier.average_quantity_275 or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Avg Qty 330</label>
+          <input type="text" name="average_quantity_330" value="{{ supplier.average_quantity_330 or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Working Hours</label>
+          <input type="text" name="working_hours" value="{{ supplier.working_hours or '' }}" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Follow-up Timeline</label>
+          <select name="followup_weeks" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; min-height:44px; background:#fff;">
+            {% for w in range(1, 11) %}
+            <option value="{{ w }}" {% if supplier.followup_weeks == w %}selected{% endif %}>{{ w }} week{% if w > 1 %}s{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- BOL email row -->
+      <div style="margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; cursor:pointer; min-height:44px;">
+          <input type="checkbox" name="bol_same_as_primary" id="bol_same_edit" {% if supplier.bol_same_as_primary %}checked{% endif %}
+            onchange="var f=document.getElementById('bol_email_edit'); f.disabled=this.checked; if(this.checked)f.value='';"
+            style="width:16px; height:16px;" />
+          BOL email(s) same as contact email
+        </label>
+        <input type="text" name="bol_email" id="bol_email_edit"
+          value="{{ supplier.bol_email or '' }}"
+          {% if supplier.bol_same_as_primary %}disabled{% endif %}
+          placeholder="email1@example.com, email2@example.com"
+          style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; margin-top:6px;" />
+      </div>
+
+      <!-- Checkboxes -->
+      <div style="display:flex; gap:24px; margin-bottom:16px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; cursor:pointer; min-height:44px;">
+          <input type="checkbox" name="is_hazmat" {% if supplier.is_hazmat %}checked{% endif %} style="width:16px; height:16px;" />
+          Hazmat Site
+        </label>
+      </div>
+
+      <!-- Notes / Warnings -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-bottom:20px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Warnings</label>
+          <textarea name="warnings" rows="2" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; resize:vertical;">{{ supplier.warnings or '' }}</textarea>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Notes</label>
+          <textarea name="notes" rows="2" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; resize:vertical;">{{ supplier.notes or '' }}</textarea>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" onclick="document.getElementById('edit-modal').style.display='none'" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Cancel</button>
+        <button type="submit" style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Save Changes</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; align-items:center; justify-content:center; padding:24px 16px;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:400px;">
+    <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0 0 12px 0;">Delete Supplier</h2>
+    <p style="font-size:14px; color:#374151; margin:0 0 24px 0;">Are you sure you want to delete <strong>{{ supplier.company_name }}</strong>? This cannot be undone.</p>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" onclick="document.getElementById('delete-modal').style.display='none'" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Cancel</button>
+      <button hx-delete="/suppliers/{{ supplier.id }}" style="background:#dc2626; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Delete</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

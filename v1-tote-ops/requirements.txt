@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+gunicorn
+sqlalchemy
+alembic
+psycopg2-binary
+supabase
+python-multipart
+jinja2
+python-dotenv
+itsdangerous
+pytest
+httpx
+Pillow>=10.1.0

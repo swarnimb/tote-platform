@@ -1,0 +1,41 @@
+<tr id="lead-row-{{ lead.id }}" class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+  <td style="font-size:13px; font-weight:500; color:#111827; padding:12px 16px;">{{ lead.company_name }}</td>
+  <td style="font-size:13px; color:#6b7280; padding:12px 16px;">{{ lead.location or '—' }}</td>
+  <td style="font-size:13px; color:#6b7280; padding:12px 16px;">
+    {% if lead.contact_name %}{{ lead.contact_name }}{% endif %}
+    {% if lead.contact_email %}<br><span style="font-size:12px;">{{ lead.contact_email }}</span>{% endif %}
+    {% if not lead.contact_name and not lead.contact_email %}—{% endif %}
+  </td>
+  <td style="padding:12px 16px;">
+    <select name="status"
+      hx-patch="/leads/{{ lead.id }}/status"
+      hx-target="#lead-row-{{ lead.id }}"
+      hx-swap="outerHTML"
+      hx-include="this"
+      style="border:1px solid #d1d5db; border-radius:6px; padding:5px 8px; font-size:12px; color:#374151; background:#fff; min-height:32px; cursor:pointer; outline:none;">
+      <option value="research" {% if lead.outreach_status == 'research' %}selected{% endif %}>Research</option>
+      <option value="contacted" {% if lead.outreach_status == 'contacted' %}selected{% endif %}>Contacted</option>
+      <option value="responded" {% if lead.outreach_status == 'responded' %}selected{% endif %}>Responded</option>
+      <option value="not_interested" {% if lead.outreach_status == 'not_interested' %}selected{% endif %}>Not Interested</option>
+      <option value="active_supplier" {% if lead.outreach_status == 'active_supplier' %}selected{% endif %}>Active Supplier</option>
+    </select>
+  </td>
+  <td style="font-size:12px; color:#6b7280; padding:12px 16px; white-space:nowrap;">{{ lead.potential_volume or '—' }}</td>
+  <td style="padding:10px 16px; text-align:right; white-space:nowrap;">
+    <button
+      data-id="{{ lead.id }}"
+      data-company-name="{{ lead.company_name | e }}"
+      data-location="{{ lead.location | e if lead.location else '' }}"
+      data-industry="{{ lead.industry | e if lead.industry else '' }}"
+      data-contact-name="{{ lead.contact_name | e if lead.contact_name else '' }}"
+      data-contact-phone="{{ lead.contact_phone | e if lead.contact_phone else '' }}"
+      data-contact-email="{{ lead.contact_email | e if lead.contact_email else '' }}"
+      data-last-contact-date="{{ lead.last_contact_date or '' }}"
+      data-potential-volume="{{ lead.potential_volume | e if lead.potential_volume else '' }}"
+      data-notes="{{ lead.notes | e if lead.notes else '' }}"
+      onclick="openEditLead(this)"
+      style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:32px;">Edit</button>
+    <button hx-delete="/leads/{{ lead.id }}" hx-confirm="Delete this lead? This cannot be undone."
+      style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:32px; margin-left:6px;">Delete</button>
+  </td>
+</tr>

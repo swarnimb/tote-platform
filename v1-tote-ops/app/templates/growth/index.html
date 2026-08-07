@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Growth Planning – ToteOps{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:24px; font-weight:700; color:#111827; margin:0 0 4px;">Growth Planning</h1>
+  <p style="font-size:14px; color:#6b7280; margin:0;">Set a revenue target and explore the levers to reach it.</p>
+</div>
+
+<!-- Section 1: Revenue Target -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:24px 28px; margin-bottom:20px;">
+  <h2 style="font-size:13px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 16px;">Revenue Target</h2>
+
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:32px; flex-wrap:wrap;">
+
+    <div>
+      {% if growth_target is none %}
+      <p style="font-size:14px; color:#9ca3af; margin:0 0 16px;">No target set yet. Enter an annual revenue goal below.</p>
+      {% else %}
+      <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:20px;">
+        <span style="font-size:32px; font-weight:700; color:#111827;">${{ "{:,.0f}".format(growth_target) }}</span>
+        <span style="font-size:14px; color:#6b7280;">/ year</span>
+      </div>
+      {% endif %}
+
+      <form method="post" action="/growth/target" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="position:relative;">
+          <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:14px; color:#6b7280;">$</span>
+          <input type="number" name="target" min="0" step="1"
+                 value="{{ growth_target | int if growth_target is not none else '' }}"
+                 placeholder="e.g. 30000"
+                 style="border:1px solid #d1d5db; border-radius:8px; padding:11px 13px 11px 26px; font-size:14px; color:#111827; width:180px; outline:none;" />
+        </div>
+        <button type="submit" style="background:#2563eb; color:#fff; border-radius:8px; padding:11px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">
+          Save Target
+        </button>
+      </form>
+    </div>
+
+    <div style="background:#f8f9fb; border:1px solid #e5e7eb; border-radius:10px; padding:16px 24px; min-width:180px;">
+      <p style="font-size:12px; font-weight:500; color:#6b7280; margin:0 0 6px; text-transform:uppercase; letter-spacing:0.05em;">Total Pickups / Year</p>
+      <p id="stat-total-shipments" style="font-size:28px; font-weight:700; color:#111827; margin:0;">—</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Section 2: Growth Levers -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:24px 28px;">
+  <h2 style="font-size:13px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 6px;">Growth Levers</h2>
+  <p style="font-size:13px; color:#9ca3af; margin:0 0 24px;">Adjust sliders to explore combinations. Values are pre-set from your historical data.</p>
+
+  {% set sliders = [
+    ("suppliers", "Active Suppliers",        default_suppliers, 0, 100, 1, ""),
+    ("shipments", "Shipments / Supplier / Year", default_shipments, 0, 52,  1, ""),
+    ("totes",     "Usable Totes / Shipment",  default_totes,     0, 60,  1, "totes"),
+    ("rate",      "Revenue / Tote",           default_rate,      0, 10,  1, "$"),
+  ] %}
+
+  {% for key, label, default, mn, mx, step, unit in sliders %}
+  <div style="display:flex; align-items:center; gap:16px; padding:16px 0; {% if not loop.last %}border-bottom:1px solid #f3f4f6;{% endif %}">
+    <div style="min-width:200px;">
+      <p style="font-size:14px; font-weight:500; color:#111827; margin:0 0 2px;">{{ label }}</p>
+      {% if key == 'totes' %}<p style="font-size:12px; color:#9ca3af; margin:0;">based on existing gradeouts</p>{% endif %}
+    </div>
+    <input type="range" id="sl-{{ key }}" min="{{ mn }}" max="{{ mx }}" step="{{ step }}"
+           value="{{ default | int }}"
+           oninput="onSlider('{{ key }}')"
+           style="flex:1; accent-color:#2563eb; height:6px; cursor:pointer; min-width:0;" />
+    <div style="display:flex; align-items:center; gap:6px;">
+      {% if unit == '$' %}<span style="font-size:14px; color:#6b7280;">$</span>{% endif %}
+      <input type="number" id="tx-{{ key }}" min="{{ mn }}" max="{{ mx }}" step="{{ step }}"
+             value="{{ default | int }}"
+             oninput="onText('{{ key }}')"
+             style="border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:14px; color:#111827; width:80px; text-align:right; outline:none;" />
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  var T = {{ growth_target if growth_target is not none else 0 }};
+  var MAX = { suppliers: 100, shipments: 52, totes: 60, rate: 10 };
+
+  function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function clamp(v, key) { return Math.min(Math.max(v, 0), MAX[key]); }
+
+  function syncSlider(key, val) {
+    document.getElementById('sl-' + key).value = clamp(Math.round(val), key);
+    document.getElementById('tx-' + key).value = Math.round(val * 10) / 10;
+  }
+  function setDash(key) {
+    document.getElementById('tx-' + key).value = '—';
+    document.getElementById('sl-' + key).value = 0;
+  }
+
+  function recalc(moved) {
+    if (T <= 0) return;
+    var s  = gv('sl-suppliers');
+    var sh = gv('sl-shipments');
+    var t  = gv('sl-totes');
+    var r  = gv('sl-rate');
+    if (moved === 'suppliers') {
+      if (s === 0 || t === 0 || r === 0) { setDash('shipments'); return; }
+      syncSlider('shipments', T / (s * t * r));
+    } else {
+      var denom = sh * t * r;
+      if (denom === 0) { setDash('suppliers'); return; }
+      syncSlider('suppliers', T / denom);
+    }
+  }
+
+  function updateStats() {
+    var s  = gv('sl-suppliers');
+    var sh = gv('sl-shipments');
+    var el = document.getElementById('stat-total-shipments');
+    el.textContent = (s > 0 && sh > 0) ? Math.round(s * sh).toLocaleString() : '—';
+  }
+
+  function onSlider(key) {
+    document.getElementById('tx-' + key).value = gv('sl-' + key);
+    recalc(key);
+    updateStats();
+  }
+  function onText(key) {
+    var v = parseFloat(document.getElementById('tx-' + key).value) || 0;
+    document.getElementById('sl-' + key).value = clamp(v, key);
+    recalc(key);
+    updateStats();
+  }
+
+  // Initialize on page load
+  if (T > 0) { recalc('suppliers'); }
+  updateStats();
+</script>
+{% endblock %}

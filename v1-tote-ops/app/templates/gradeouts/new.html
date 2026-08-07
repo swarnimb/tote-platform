@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}New Gradeout — ToteOps{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+  <a href="/gradeouts" style="color:#6b7280; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:4px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Gradeouts
+  </a>
+  <span style="color:#d1d5db;">/</span>
+  <h1 style="font-size:22px; font-weight:700; color:#111827; margin:0;">New Gradeout</h1>
+</div>
+
+{% if form_error %}
+<div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px 14px; margin-bottom:20px; font-size:13px; color:#dc2626;">{{ form_error }}</div>
+{% endif %}
+
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:28px 32px; max-width:640px;">
+  <form method="post" action="/gradeouts">
+
+    <!-- Supplier -->
+    <div style="margin-bottom:20px;">
+      <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Supplier <span style="color:#dc2626;">*</span></label>
+      {% include "suppliers/_quick_select.html" %}
+    </div>
+
+    <!-- Pickup link (shown dynamically based on confirmed pickups for selected supplier) -->
+    <div id="pickup-field" style="display:none; margin-bottom:20px;"></div>
+
+    <!-- Date Received -->
+    <div style="margin-bottom:20px;">
+      <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Date Received <span style="color:#dc2626;">*</span></label>
+      <input type="date" name="date_received" value="{{ form_data.date_received if form_data else '' }}" required
+        style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+    </div>
+
+    <!-- 275-gal totes -->
+    <div style="margin-bottom:16px;">
+      <h3 style="font-size:13px; font-weight:600; color:#374151; margin:0 0 10px;">275-Gallon Totes</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Good Washable</label>
+          <input type="number" name="totes_275_good_washable" id="gw275" min="0" value="{{ form_data.totes_275_good_washable if form_data else '0' }}" oninput="calcTotal()"
+            style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Good Cage</label>
+          <input type="number" name="totes_275_good_cage" id="gc275" min="0" value="{{ form_data.totes_275_good_cage if form_data else '0' }}" oninput="calcTotal()"
+            style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Total Usable</label>
+          <input type="number" name="totes_275_total_usable" id="tu275" min="0" value="{{ form_data.totes_275_total_usable if form_data else '0' }}" readonly
+            style="border:1px solid #e5e7eb; border-radius:8px; padding:10px 13px; font-size:14px; color:#374151; background:#f9fafb; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 330-gal totes -->
+    <div style="margin-bottom:20px;">
+      <h3 style="font-size:13px; font-weight:600; color:#374151; margin:0 0 10px;">330-Gallon Totes</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Good Washable</label>
+          <input type="number" name="totes_330_good_washable" id="gw330" min="0" value="{{ form_data.totes_330_good_washable if form_data else '0' }}" oninput="calcTotal()"
+            style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Good Cage</label>
+          <input type="number" name="totes_330_good_cage" id="gc330" min="0" value="{{ form_data.totes_330_good_cage if form_data else '0' }}" oninput="calcTotal()"
+            style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Total Usable</label>
+          <input type="number" name="totes_330_total_usable" id="tu330" min="0" value="{{ form_data.totes_330_total_usable if form_data else '0' }}" readonly
+            style="border:1px solid #e5e7eb; border-radius:8px; padding:10px 13px; font-size:14px; color:#374151; background:#f9fafb; width:100%; box-sizing:border-box; outline:none; min-height:44px;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Junk (combined) -->
+    <div style="margin-bottom:20px;">
+      <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Junk</label>
+      <input type="number" name="junk" min="0" value="{{ form_data.junk if form_data else '0' }}"
+        style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:160px; box-sizing:border-box; outline:none; min-height:44px;" />
+    </div>
+
+    <!-- Notes -->
+    <div style="margin-bottom:24px;">
+      <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Notes</label>
+      <textarea name="notes" rows="2"
+        style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; resize:vertical;">{{ form_data.notes if form_data else '' }}</textarea>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <a href="/gradeouts" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center;">Cancel</a>
+      <button type="submit" style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Save Gradeout</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- New Supplier Modal -->
+<div id="new-supplier-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; align-items:flex-start; justify-content:center; padding:24px 16px; overflow-y:auto;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:480px; position:relative;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0;">New Supplier</h2>
+      <button type="button" onclick="document.getElementById('new-supplier-modal').style.display='none'"
+        style="background:none; border:none; cursor:pointer; color:#6b7280; font-size:20px; min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+    </div>
+    <form hx-post="/suppliers/quick" hx-target="#supplier-id-wrapper" hx-swap="outerHTML">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div style="grid-column:1/-1;">
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Company Name <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="company_name" required style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Location <span style="color:#dc2626;">*</span></label>
+          <input type="text" name="location" required style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Contact Name</label>
+          <input type="text" name="contact_name" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Phone</label>
+          <input type="text" name="phone" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Email</label>
+          <input type="email" name="email" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Industry</label>
+          <input type="text" name="industry" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none;" />
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Notes</label>
+        <textarea name="notes" rows="2" style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; outline:none; resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" onclick="document.getElementById('new-supplier-modal').style.display='none'"
+          style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">Cancel</button>
+        <button type="submit" style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Save Supplier</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function calcTotal() {
+    var gw275 = parseInt(document.getElementById('gw275').value || 0);
+    var gc275 = parseInt(document.getElementById('gc275').value || 0);
+    var gw330 = parseInt(document.getElementById('gw330').value || 0);
+    var gc330 = parseInt(document.getElementById('gc330').value || 0);
+    document.getElementById('tu275').value = gw275 + gc275;
+    document.getElementById('tu330').value = gw330 + gc330;
+  }
+
+  document.addEventListener('closeSupplierModal', function() {
+    document.getElementById('new-supplier-modal').style.display = 'none';
+  });
+
+  var confirmedPickupsBySupplierId = {{ confirmed_pickups_by_supplier | default({}) | tojson }};
+
+  function updatePickupField() {
+    var sel = document.querySelector('select[name="supplier_id"]');
+    var pickups = sel ? (confirmedPickupsBySupplierId[sel.value] || []) : [];
+    var field = document.getElementById('pickup-field');
+    if (pickups.length === 0) {
+      field.style.display = 'none';
+      field.innerHTML = '';
+    } else if (pickups.length === 1) {
+      field.style.display = 'block';
+      field.innerHTML = '<p style="font-size:13px; color:#f59e0b; font-weight:500; margin:0;">1 pickup confirmed \u2014 auto-linking</p>'
+        + '<input type="hidden" name="pickup_id" value="' + pickups[0].id + '">';
+    } else {
+      var opts = pickups.map(function(p) {
+        return '<option value="' + p.id + '">' + p.label + '</option>';
+      }).join('');
+      field.style.display = 'block';
+      field.innerHTML = '<label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Link to Pickup <span style="color:#dc2626;">*</span></label>'
+        + '<select name="pickup_id" required style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; width:100%; box-sizing:border-box; min-height:44px; outline:none; background:#fff;">'
+        + '<option value="">Select pickup\u2026</option>' + opts + '</select>';
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === 'supplier_id') updatePickupField();
+  });
+  document.addEventListener('DOMContentLoaded', updatePickupField);
+</script>
+
+{% endblock %}

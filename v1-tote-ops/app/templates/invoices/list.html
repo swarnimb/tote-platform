@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices — ToteOps{% endblock %}
+
+{% block content %}
+
+<style>
+  .toggle-cb { opacity:0; width:0; height:0; position:absolute; }
+  .toggle-track { position:absolute; cursor:pointer; inset:0; background:#d1d5db; border-radius:20px; transition:0.2s; }
+  .toggle-track::after { content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:#fff; top:3px; left:3px; transition:0.2s; }
+  .toggle-cb:checked + .toggle-track { background:#16a34a; }
+  .toggle-cb:checked + .toggle-track::after { transform:translateX(16px); }
+</style>
+
+<!-- Page header -->
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:22px; font-weight:700; color:#111827; margin:0 0 16px;">Invoices</h1>
+
+  <!-- Generate form -->
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 24px;">
+    <label style="display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:6px;">Generate Invoice for Month</label>
+    <form hx-get="/invoices/preview" hx-target="#modal-container" hx-swap="innerHTML"
+          style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <input type="month" name="month" required
+        style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; min-height:44px; outline:none;" />
+      <button type="submit"
+        style="background:#2563eb; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">Generate</button>
+    </form>
+  </div>
+</div>
+
+<!-- Invoices table -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+          <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Month</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Gradeouts</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">275 Usable</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">330 Usable</th>
+          <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Revenue</th>
+          <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Created</th>
+          <th style="padding:10px 16px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if invoices %}
+          {% for inv in invoices %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; font-weight:500; color:#111827; padding:12px 16px; white-space:nowrap;">
+              {{ inv.month.strftime('%B %Y') }}
+            </td>
+            <td style="font-size:13px; color:#6b7280; padding:12px 16px; text-align:right;">{{ inv.gradeout_count }}</td>
+            <td style="font-size:13px; color:#111827; padding:12px 16px; text-align:right;">{{ inv.total_usable_275 }}</td>
+            <td style="font-size:13px; color:#111827; padding:12px 16px; text-align:right;">{{ inv.total_usable_330 }}</td>
+            <td style="font-size:13px; font-weight:600; color:#16a34a; padding:12px 16px; text-align:right;">${{ inv.total_revenue | int }}</td>
+            <td style="font-size:12px; color:#6b7280; padding:12px 16px; white-space:nowrap;">
+              {{ inv.generated_at.strftime('%b %d, %Y') }}
+            </td>
+            <td style="padding:10px 16px; white-space:nowrap;">
+              <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+                <!-- Preview -->
+                <button
+                  hx-get="/invoices/preview?month={{ inv.month.strftime('%Y-%m') }}"
+                  hx-target="#modal-container"
+                  hx-swap="innerHTML"
+                  style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:6px; padding:8px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:44px;">Preview</button>
+
+                <!-- Send (Web Share) -->
+                <button
+                  onclick="sendInvoice('{{ inv.id }}', '{{ inv.month.strftime('%Y-%m') }}')"
+                  style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:6px; padding:8px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:44px;">Send</button>
+
+                <!-- Delete -->
+                <button
+                  hx-delete="/invoices/{{ inv.id }}"
+                  hx-confirm="Delete invoice for {{ inv.month.strftime('%B %Y') }}?"
+                  hx-target="body"
+                  hx-swap="none"
+                  style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:8px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:44px;">Delete</button>
+
+                <!-- Sent toggle -->
+                <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; min-height:44px;">
+                  <span style="position:relative; display:inline-block; width:36px; height:20px;">
+                    <input type="checkbox" class="toggle-cb"
+                      {% if inv.sent_at %}checked{% endif %}
+                      hx-patch="/invoices/{{ inv.id }}/sent"
+                      hx-trigger="change"
+                      hx-swap="none">
+                    <span class="toggle-track"></span>
+                  </span>
+                  <span style="font-size:12px; color:#6b7280;">{{ 'Sent' if inv.sent_at else 'Not sent' }}</span>
+                </label>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:40px 16px; font-size:13px; color:#9ca3af;">
+            No invoices yet. Generate your first invoice above.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- HTMX modal target -->
+<div id="modal-container"></div>
+
+<script>
+async function sendInvoice(invoiceId, month) {
+  if (!navigator.share) {
+    alert('Web Share not supported — use a compatible browser or device');
+    return;
+  }
+  try {
+    const resp = await fetch('/invoices/' + invoiceId + '/image');
+    if (!resp.ok) { alert('Could not generate invoice image'); return; }
+    const blob = await resp.blob();
+    const file = new File([blob], 'invoice-' + month + '.png', { type: 'image/png' });
+    await navigator.share({ files: [file], title: 'Invoice' });
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      alert('Web Share not supported — use a compatible browser or device');
+    }
+  }
+}
+</script>
+
+{% endblock %}

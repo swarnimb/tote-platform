@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@source "../components/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-app-bg: var(--app-bg);
+  --color-card-bg: var(--card-bg);
+  --color-tertiary: var(--tertiary);
+  --color-neutral-slate: var(--neutral-slate);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height, auto); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height, auto); }
+    to { height: 0; }
+  }
+}
+
+:root {
+  /* Industrial Slate palette */
+  --primary: #007A8A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #475569;
+  --secondary-foreground: #FFFFFF;
+  --tertiary: #5C799B;
+  --neutral-slate: #64748B;
+  --app-bg: #F0F4F8;
+  --card-bg: #FFFFFF;
+
+  /* shadcn semantic tokens — aligned to Industrial Slate */
+  --background: #F0F4F8;
+  --foreground: #1E293B;
+  --card: #FFFFFF;
+  --card-foreground: #1E293B;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E293B;
+  --muted: #E2E8F0;
+  --muted-foreground: #64748B;
+  --accent: #E2E8F0;
+  --accent-foreground: #1E293B;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #CBD5E1;
+  --input: #CBD5E1;
+  --ring: #007A8A;
+  --radius: 0.5rem;
+
+  /* ── Production calendar card metrics (Feature 11, CONSTRAINT-19) ──────────
+     The calendar's design target is 4 whole cards visible without scrolling at
+     any viewport height, so the card scales and the count does not. 25vh minus
+     70px of fixed chrome per card, floored at 80px (below which the mix line
+     stops being readable on a shop floor) and capped at 104px.
+
+     Every other card metric is a fraction of --card-h so the four rows plus
+     both padding edges always sum to exactly --card-h at any size:
+       2×0.05 (padding) + 0.21 + 0.25 + 0.25 + 0.19 (rows) = 1.00
+     The name and mix rows each hold 2 lines, so their line-height is half the
+     row height. Change a row fraction and the others must be rebalanced to
+     keep the sum at 1.00, or cards stop being uniform. */
+  --card-h: clamp(80px, calc(25vh - 70px), 104px);
+  --card-pad: calc(var(--card-h) * 0.05);
+  --card-row-po: calc(var(--card-h) * 0.21);
+  --card-row-name: calc(var(--card-h) * 0.25);
+  --card-row-mix: calc(var(--card-h) * 0.25);
+  --card-row-date: calc(var(--card-h) * 0.19);
+  --card-line-name: calc(var(--card-row-name) / 2);
+  --card-line-mix: calc(var(--card-row-mix) / 2);
+  --card-fs-po: calc(var(--card-h) * 0.125);
+  --card-fs-name: calc(var(--card-h) * 0.105);
+  --card-fs-mix: calc(var(--card-h) * 0.1);
+  --card-fs-date: calc(var(--card-h) * 0.105);
+}
+
+/* ── Production calendar scroll surfaces (Feature 11, CONSTRAINT-19) ─────────
+   macOS and iPadOS render overlay scrollbars that fade out when idle, which
+   hides the fact that the week strip and the day columns scroll at all. The
+   calendar is the one screen where that matters — the page itself never
+   scrolls, so an invisible scrollbar reads as "this is everything." Both
+   vendor-prefixed and standard properties are set because WebKit (Safari,
+   iPadOS — the primary device) only honours the prefixed form. */
+.calendar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.calendar-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.calendar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.calendar-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* The horizontal week strip needs a darker thumb than the day columns do.
+   Columns scroll against `--card` (#FFFFFF), where `--border` (#CBD5E1) just
+   clears the contrast threshold; the strip scrolls against `--app-bg`
+   (#F0F4F8), where the same grey is effectively invisible. Nothing else on
+   screen signals that more weeks exist to the right, so this bar is the only
+   affordance for horizontal scroll (prd.md:590). */
+.calendar-scroll-strip {
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+.calendar-scroll-strip::-webkit-scrollbar-thumb {
+  background-color: var(--muted-foreground);
+}
+
+/* The per-day `+ Add order` action. Visible at all times by default, and
+   revealed on hover *only* where hovering is actually possible. Gating on
+   `(hover: hover) and (pointer: fine)` rather than a breakpoint keeps it
+   permanently on screen for iPad and every other touch device, where a
+   hover-only affordance is unreachable. Focus keeps it visible for keyboards. */
+@media (hover: hover) and (pointer: fine) {
+  .day-column-action {
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  .day-column:hover .day-column-action,
+  .day-column:focus-within .day-column-action {
+    opacity: 1;
+  }
+}
+
+/* Production cards under a finger. A long-press on iPadOS fires the OS's own
+   gestures — the text-selection magnifier/callout at ~500ms and native
+   element drag — on top of the app's long-press-to-arm (Task 68 / A-05).
+   Suppressing all three is what makes the app the only listener for the
+   gesture. Tailwind has no utility for -webkit-touch-callout or
+   -webkit-user-drag, so this lives here. */
+.calendar-card-press {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* The armed card's shake — the iOS home-screen jiggle, signalling "I'm picked
+   up, tap a destination". Amplitude stays small so the card remains readable
+   while armed. The bold outline is applied separately via ring utilities, so
+   reduced-motion users still get a clear armed signal when this animation is
+   disabled below. */
+@keyframes calendar-card-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-0.8deg); }
+  75% { transform: rotate(0.8deg); }
+}
+.calendar-card-armed {
+  animation: calendar-card-shake 0.35s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calendar-card-armed {
+    animation: none;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  html {
+    @apply font-sans;
+  }
+}

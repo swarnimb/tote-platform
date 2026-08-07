@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — ToteOps{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-size: 22px; font-weight: 700; color: #111827; margin: 0 0 4px;">Dashboard</h1>
+    <p style="font-size: 13px; color: #6b7280; margin: 0;">{{ period_label }}</p>
+  </div>
+  <div style="display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px;">
+    <a href="/?period=month" style="padding:6px 16px; border-radius:6px; font-size:13px; font-weight:500; text-decoration:none;
+      {% if period == 'month' %}background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,0.08);{% else %}color:#6b7280;{% endif %}">Month</a>
+    <a href="/?period=year" style="padding:6px 16px; border-radius:6px; font-size:13px; font-weight:500; text-decoration:none;
+      {% if period == 'year' %}background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,0.08);{% else %}color:#6b7280;{% endif %}">Year</a>
+  </div>
+</div>
+
+<!-- Stat cards — 2-col mobile, 4-col desktop -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-4" style="margin-bottom: 28px;">
+
+  <!-- Revenue -->
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+    <div style="display:flex; align-items:flex-start; gap:14px;">
+      <div style="background:#f0fdf4; border-radius:8px; width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:11px; font-weight:500; color:#6b7280; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.05em;">Revenue{% if period == 'year' %} YTD{% endif %}</p>
+        <p style="font-size:22px; font-weight:700; color:#111827; margin:0;">${{ "%.0f"|format(stats.revenue) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Suppliers -->
+  <a href="/suppliers" style="text-decoration:none; color:inherit; display:block;">
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+    <div style="display:flex; align-items:flex-start; gap:14px;">
+      <div style="background:#f5f3ff; border-radius:8px; width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:11px; font-weight:500; color:#6b7280; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.05em;">Suppliers</p>
+        <p style="font-size:22px; font-weight:700; color:#111827; margin:0;">{{ active_suppliers }}</p>
+      </div>
+    </div>
+  </div>
+  </a>
+
+  <!-- Gradeouts This Month -->
+  <a href="/gradeouts" style="text-decoration:none; color:inherit; display:block;">
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px;">
+    <div style="display:flex; align-items:flex-start; gap:14px;">
+      <div style="background:#fff7ed; border-radius:8px; width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:11px; font-weight:500; color:#6b7280; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.05em;">Gradeouts{% if period == 'year' %} YTD{% endif %}</p>
+        <p style="font-size:22px; font-weight:700; color:#111827; margin:0;">{{ stats.gradeout_count }}</p>
+      </div>
+    </div>
+  </div>
+  </a>
+
+  <!-- Pickups Confirmed -->
+  <button onclick="document.getElementById('pickups-modal').style.display='flex'" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px; cursor:pointer; width:100%; text-align:left; display:block;">
+    <div style="display:flex; align-items:flex-start; gap:14px;">
+      <div style="background:#eff6ff; border-radius:8px; width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div>
+        <p style="font-size:11px; font-weight:500; color:#6b7280; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.05em;">Pickups Confirmed</p>
+        <p style="font-size:22px; font-weight:700; color:#111827; margin:0;">{{ confirmed_pickup_count }}</p>
+      </div>
+    </div>
+  </button>
+
+</div>
+
+<!-- Revenue Trend chart card -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:28px;">
+  <div id="chart-toggle-btn" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;">
+    <h2 style="font-size:14px; font-weight:600; color:#111827; margin:0;">Revenue Trend</h2>
+    <svg id="chart-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="transition:transform 0.2s; flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div id="chart-body" style="display:none; padding:20px; border-top:1px solid #e5e7eb;">
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <div style="display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px;">
+        <button data-pill="time" data-val="monthly" onclick="setPill('time','monthly')" style="padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#2563eb; color:#fff; min-height:32px;">Monthly</button>
+        <button data-pill="time" data-val="annual" onclick="setPill('time','annual')" style="padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#f3f4f6; color:#6b7280; min-height:32px;">Annual</button>
+      </div>
+      <div style="display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px;">
+        <button data-pill="value" data-val="period" onclick="setPill('value','period')" style="padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#2563eb; color:#fff; min-height:32px;">Per Period</button>
+        <button data-pill="value" data-val="cumulative" onclick="setPill('value','cumulative')" style="padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#f3f4f6; color:#6b7280; min-height:32px;">Cumulative</button>
+      </div>
+    </div>
+    <canvas id="revenue-chart" style="max-height:280px;"></canvas>
+  </div>
+</div>
+
+<!-- Content panels — 1-col mobile, 2-col xl -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+<!-- Recent Gradeouts panel -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+  <div id="gradeouts-toggle-btn" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;">
+    <h2 style="font-size:14px; font-weight:600; color:#111827; margin:0;">Recent Gradeouts</h2>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="/gradeouts" onclick="event.stopPropagation()" style="font-size:12px; color:#2563eb; text-decoration:none; font-weight:500;">View all</a>
+      <svg id="gradeouts-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="transition:transform 0.2s; flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div id="gradeouts-body" style="display:none; border-top:1px solid #e5e7eb;">
+    {% if recent_gradeouts %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Date</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Supplier</th>
+            <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">275 W/C</th>
+            <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">330 W/C</th>
+            <th style="text-align:right; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in recent_gradeouts %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#6b7280; padding:14px 16px; white-space:nowrap;">{{ g.date_received }}</td>
+            <td style="font-size:13px; color:#111827; padding:14px 16px;">
+              <a href="/suppliers/{{ g.supplier_id }}" style="color:#111827; text-decoration:none;">{{ g.supplier.company_name }}</a>
+            </td>
+            <td style="font-size:13px; color:#111827; padding:14px 16px; text-align:right;">{{ g.totes_275_good_washable }}/{{ g.totes_275_good_cage }}</td>
+            <td style="font-size:13px; color:#111827; padding:14px 16px; text-align:right;">{{ g.totes_330_good_washable }}/{{ g.totes_330_good_cage }}</td>
+            <td style="font-size:13px; font-weight:600; color:#16a34a; padding:14px 16px; text-align:right;">
+              ${{ ((g.totes_275_total_usable + g.totes_330_total_usable) * tote_rate) | int }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:32px 20px; text-align:center;">
+      <p style="font-size:13px; color:#9ca3af; margin:0;">No gradeouts yet. <a href="/gradeouts/new" style="color:#2563eb;">Add your first gradeout.</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Follow Up With Suppliers panel -->
+<div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+  <div id="followup-toggle-btn" style="padding:16px 20px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;">
+    <h2 style="font-size:14px; font-weight:600; color:#111827; margin:0;">Follow Up With Suppliers</h2>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="/suppliers" onclick="event.stopPropagation()" style="font-size:12px; color:#2563eb; text-decoration:none; font-weight:500;">View all</a>
+      <svg id="followup-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" style="transition:transform 0.2s; flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div id="followup-body" style="display:none; border-top:1px solid #e5e7eb;">
+
+    <!-- View toggle -->
+    <div style="padding:12px 20px; border-bottom:1px solid #f3f4f6; display:flex; background:#f9fafb;">
+      <div style="display:flex; background:#f3f4f6; border-radius:8px; padding:3px; gap:2px;">
+        <button id="followup-tab-urgency" onclick="setFollowupView('urgency')"
+          style="padding:5px 14px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#2563eb; color:#fff; min-height:32px;">Needs Follow-up</button>
+        <button id="followup-tab-all" onclick="setFollowupView('all')"
+          style="padding:5px 14px; border-radius:6px; font-size:12px; font-weight:500; border:none; cursor:pointer; background:#f3f4f6; color:#6b7280; min-height:32px;">All Suppliers</button>
+      </div>
+    </div>
+
+    <!-- Urgency view -->
+    <div id="followup-view-urgency" style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Supplier</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Last Pickup</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Last Action</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">275 W/C Avg</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">330 W/C Avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in followup_suppliers %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#111827; padding:14px 16px;">
+              <a href="/suppliers/{{ item.supplier.id }}" style="color:#111827; text-decoration:none;">{{ item.supplier.company_name }}</a>
+              {% set loc = item.supplier.location.split(',') %}
+              <span style="font-size:12px; color:#6b7280; margin-left:6px;">{% if loc|length >= 2 %}{{ loc[-2].strip() }}, {{ loc[-1].strip() }}{% else %}{{ item.supplier.location }}{% endif %}</span>
+            </td>
+            <td style="font-size:13px; padding:14px 16px;">
+              {% if item.last_gradeout %}
+                <span style="color:#6b7280;">{{ item.last_gradeout }}</span>
+              {% else %}
+                <span style="color:#f59e0b; font-weight:500;">Never</span>
+              {% endif %}
+            </td>
+            <td style="font-size:13px; padding:10px 16px;">
+              <select
+                name="last_action_stage"
+                data-supplier-id="{{ item.supplier.id }}"
+                data-supplier-name="{{ item.supplier.company_name | e }}"
+                data-previous-value="{{ item.supplier.last_action_stage or '' }}"
+                onmousedown="handleActionStageMousedown(this)"
+                onchange="handleActionStageChange(this)"
+                style="border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:12px; color:#111827; outline:none; background:#fff; min-height:32px;">
+                <option value="" {% if not item.supplier.last_action_stage %}selected{% endif %}>—</option>
+                <option value="followed_up" {% if item.supplier.last_action_stage == 'followed_up' %}selected{% endif %}>Followed Up</option>
+                <option value="responded_no" {% if item.supplier.last_action_stage == 'responded_no' %}selected{% endif %}>Responded No</option>
+                <option value="pickup_confirmed" {% if item.supplier.last_action_stage == 'pickup_confirmed' %}selected{% endif %}>Pickup Confirmed</option>
+                <option value="maybe" {% if item.supplier.last_action_stage == 'maybe' %}selected{% endif %}>Maybe</option>
+              </select>
+              {% if item.supplier.last_action_date %}<div style="font-size:11px; color:#9ca3af; margin-top:2px;">{{ item.supplier.last_action_date }}</div>{% endif %}
+            </td>
+            <td style="font-size:13px; color:#6b7280; padding:14px 16px;">
+              {% if item.avg_275_washable is not none %}{{ item.avg_275_washable }}/{{ item.avg_275_cage }}{% else %}—{% endif %}
+            </td>
+            <td style="font-size:13px; color:#6b7280; padding:14px 16px;">
+              {% if item.avg_330_washable is not none %}{{ item.avg_330_washable }}/{{ item.avg_330_cage }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- All Suppliers view -->
+    <div id="followup-view-all" style="display:none; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Supplier</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Last Action</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Action Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in all_suppliers %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#111827; padding:14px 16px;">
+              <a href="/suppliers/{{ s.id }}" style="color:#111827; text-decoration:none;">{{ s.company_name }}</a>
+              {% set loc = s.location.split(',') %}
+              <span style="font-size:12px; color:#6b7280; margin-left:6px;">{% if loc|length >= 2 %}{{ loc[-2].strip() }}, {{ loc[-1].strip() }}{% else %}{{ s.location }}{% endif %}</span>
+            </td>
+            <td style="font-size:13px; padding:10px 16px;">
+              <select
+                name="last_action_stage"
+                data-supplier-id="{{ s.id }}"
+                data-supplier-name="{{ s.company_name | e }}"
+                data-previous-value="{{ s.last_action_stage or '' }}"
+                onmousedown="handleActionStageMousedown(this)"
+                onchange="handleActionStageChange(this)"
+                style="border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:12px; color:#111827; outline:none; background:#fff; min-height:32px;">
+                <option value="" {% if not s.last_action_stage %}selected{% endif %}>—</option>
+                <option value="followed_up" {% if s.last_action_stage == 'followed_up' %}selected{% endif %}>Followed Up</option>
+                <option value="responded_no" {% if s.last_action_stage == 'responded_no' %}selected{% endif %}>Responded No</option>
+                <option value="pickup_confirmed" {% if s.last_action_stage == 'pickup_confirmed' %}selected{% endif %}>Pickup Confirmed</option>
+                <option value="maybe" {% if s.last_action_stage == 'maybe' %}selected{% endif %}>Maybe</option>
+              </select>
+            </td>
+            <td style="font-size:13px; color:#6b7280; padding:14px 16px; white-space:nowrap;">{{ s.last_action_date or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end followup-body -->
+</div>
+
+</div><!-- end grid -->
+
+<!-- Confirmed Pickups Modal -->
+<div id="pickups-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; align-items:flex-start; justify-content:center; padding:24px 16px; overflow-y:auto;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0;">Confirmed Pickups</h2>
+      <button type="button" onclick="document.getElementById('pickups-modal').style.display='none'" style="background:none; border:none; cursor:pointer; color:#6b7280; font-size:20px; min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center;">✕</button>
+    </div>
+    {% if confirmed_pickups %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Supplier</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Date Confirmed</th>
+            <th style="text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; padding:10px 16px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in confirmed_pickups %}
+          <tr class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+            <td style="font-size:13px; color:#111827; padding:14px 16px;">{{ p.supplier_name }}</td>
+            <td style="font-size:13px; color:#6b7280; padding:14px 16px; white-space:nowrap;">{{ p.created_at.strftime('%b %d, %Y') }}</td>
+            <td style="padding:14px 16px;">
+              <button hx-delete="/pickups/{{ p.id }}" hx-confirm="Cancel this pickup?" hx-target="body" hx-swap="none"
+                style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:36px;">Cancel</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:32px 0; text-align:center;">
+      <p style="font-size:13px; color:#9ca3af; margin:0;">No confirmed pickups.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  var chartData = {{ chart_data | tojson }};
+  var chartInstance = null;
+  var timeMode = 'monthly';
+  var valueMode = 'period';
+
+  function getDataset() {
+    var pts = chartData[timeMode].map(function(d){ return d.revenue; });
+    if (valueMode === 'cumulative') {
+      var s = 0; return pts.map(function(v){ return (s += v); });
+    }
+    return pts;
+  }
+  function renderChart() {
+    var ctx = document.getElementById('revenue-chart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartData[timeMode].map(function(d){ return d.label; }),
+        datasets: [{ data: getDataset(), backgroundColor: '#2563eb', borderRadius: 4 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { callback: function(v){ return '$'+v; } } } } }
+    });
+  }
+  function setPill(group, val) {
+    if (group === 'time') timeMode = val; else valueMode = val;
+    document.querySelectorAll('[data-pill="'+group+'"]').forEach(function(el) {
+      var active = el.dataset.val === val;
+      el.style.background = active ? '#2563eb' : '#f3f4f6';
+      el.style.color = active ? '#fff' : '#6b7280';
+    });
+    renderChart();
+  }
+  document.getElementById('chart-toggle-btn').addEventListener('click', function() {
+    var body = document.getElementById('chart-body');
+    var arrow = document.getElementById('chart-arrow');
+    var isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+    if (!isOpen && !chartInstance) renderChart();
+  });
+
+  function togglePanel(bodyId, arrowId) {
+    var body = document.getElementById(bodyId);
+    var arrow = document.getElementById(arrowId);
+    var isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+  document.getElementById('gradeouts-toggle-btn').addEventListener('click', function() {
+    togglePanel('gradeouts-body', 'gradeouts-arrow');
+  });
+  document.getElementById('followup-toggle-btn').addEventListener('click', function() {
+    togglePanel('followup-body', 'followup-arrow');
+  });
+
+  function setFollowupView(view) {
+    var isUrgency = view === 'urgency';
+    document.getElementById('followup-view-urgency').style.display = isUrgency ? 'block' : 'none';
+    document.getElementById('followup-view-all').style.display = isUrgency ? 'none' : 'block';
+    document.getElementById('followup-tab-urgency').style.background = isUrgency ? '#2563eb' : '#f3f4f6';
+    document.getElementById('followup-tab-urgency').style.color = isUrgency ? '#fff' : '#6b7280';
+    document.getElementById('followup-tab-all').style.background = isUrgency ? '#f3f4f6' : '#2563eb';
+    document.getElementById('followup-tab-all').style.color = isUrgency ? '#6b7280' : '#fff';
+  }
+</script>
+
+{% endblock %}

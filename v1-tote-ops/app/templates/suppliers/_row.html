@@ -1,0 +1,51 @@
+<tr id="supplier-row-{{ supplier.id }}" class="tbl-row" style="border-bottom:1px solid #f3f4f6;">
+  <td style="font-size:13px; font-weight:500; color:#111827; padding:14px 16px;">
+    <a href="/suppliers/{{ supplier.id }}" style="color:#111827; text-decoration:none;">{{ supplier.company_name }}</a>
+  </td>
+  <td style="font-size:13px; color:#6b7280; padding:14px 16px;">
+    {% set parts = supplier.location.split(',') %}
+    {% if parts|length >= 2 %}{{ parts[-2].strip() }}, {{ parts[-1].strip() }}{% else %}{{ supplier.location }}{% endif %}
+  </td>
+  {% set stats = supplier_stats.get(supplier.id) if supplier_stats else None %}
+  <td style="font-size:13px; color:#6b7280; padding:14px 16px; text-align:left;">
+    {% if stats %}{{ stats.avg_275_washable }}/{{ stats.avg_275_cage }}{% else %}—{% endif %}
+  </td>
+  <td style="font-size:13px; color:#6b7280; padding:14px 16px; text-align:left;">
+    {% if stats %}{{ stats.avg_330_washable }}/{{ stats.avg_330_cage }}{% else %}—{% endif %}
+  </td>
+  <td style="font-size:13px; color:#6b7280; padding:14px 16px;">
+    {% if stats and stats.last_gradeout %}{{ stats.last_gradeout }}{% else %}—{% endif %}
+  </td>
+  <td style="font-size:13px; padding:10px 16px;">
+    <select
+      name="last_action_stage"
+      data-supplier-id="{{ supplier.id }}"
+      data-supplier-name="{{ supplier.company_name | e }}"
+      data-previous-value="{{ supplier.last_action_stage or '' }}"
+      onmousedown="handleActionStageMousedown(this)"
+      onchange="handleActionStageChange(this)"
+      style="border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:12px; color:#111827; outline:none; background:#fff; min-height:32px;">
+      <option value="" {% if not supplier.last_action_stage %}selected{% endif %}>—</option>
+      <option value="followed_up" {% if supplier.last_action_stage == 'followed_up' %}selected{% endif %}>Followed Up</option>
+      <option value="responded_no" {% if supplier.last_action_stage == 'responded_no' %}selected{% endif %}>Responded No</option>
+      <option value="pickup_confirmed" {% if supplier.last_action_stage == 'pickup_confirmed' %}selected{% endif %}>Pickup Confirmed</option>
+      <option value="maybe" {% if supplier.last_action_stage == 'maybe' %}selected{% endif %}>Maybe</option>
+    </select>
+    {% if supplier.last_action_date %}<div style="font-size:11px; color:#9ca3af; margin-top:2px;">{{ supplier.last_action_date }}</div>{% endif %}
+  </td>
+  <td style="padding:14px 16px;">
+    {% if supplier.is_hazmat %}
+    <span style="background:#fef2f2; color:#dc2626; border-radius:9999px; font-size:11px; font-weight:500; padding:2px 8px;">Hazmat</span>
+    {% endif %}
+    {% if not supplier.is_active %}
+    <span style="background:#f3f4f6; color:#6b7280; border-radius:9999px; font-size:11px; font-weight:500; padding:2px 8px;">Inactive</span>
+    {% endif %}
+    {% if supplier.is_active and not supplier.is_hazmat %}
+    <span style="color:#9ca3af; font-size:13px;">—</span>
+    {% endif %}
+  </td>
+  <td style="padding:10px 16px; text-align:right; white-space:nowrap;">
+    <a href="/suppliers/{{ supplier.id }}" style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; text-decoration:none; display:inline-block; min-height:32px; line-height:20px;">View</a>
+    <button hx-delete="/suppliers/{{ supplier.id }}" hx-confirm="Delete {{ supplier.company_name }}? This cannot be undone." style="background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; min-height:32px; margin-left:6px;">Delete</button>
+  </td>
+</tr>

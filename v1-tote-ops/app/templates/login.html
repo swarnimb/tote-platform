@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ToteOps — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .input-field {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 11px 13px;
+      width: 100%;
+      font-size: 14px;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-field:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .input-field.error {
+      border-color: #dc2626;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      width: 100%;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.15s;
+      min-height: 44px;
+    }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .btn-primary:active { background-color: #1e40af; }
+  </style>
+</head>
+<body style="background-color: #f8f9fb; min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+
+  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px 40px 36px; width: 100%; max-width: 400px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+
+    <!-- Logo -->
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div style="display: inline-flex; align-items: center; gap: 10px;">
+        <div style="background-color: #eff6ff; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        </div>
+        <span style="font-size: 20px; font-weight: 700; color: #111827;">ToteOps</span>
+      </div>
+      <p style="color: #6b7280; font-size: 14px; margin-top: 8px;">Operations dashboard</p>
+    </div>
+
+    <!-- Form -->
+    <form method="post" action="/login">
+
+      {% if error %}
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;">
+        <p style="color: #dc2626; font-size: 13px; font-weight: 500; margin: 0;">{{ error }}</p>
+      </div>
+      {% endif %}
+
+      <div style="margin-bottom: 20px;">
+        <label for="password" style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          class="input-field{% if error %} error{% endif %}"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          autofocus
+        />
+      </div>
+
+      <button type="submit" class="btn-primary">Sign in</button>
+
+    </form>
+
+  </div>
+
+</body>
+</html>

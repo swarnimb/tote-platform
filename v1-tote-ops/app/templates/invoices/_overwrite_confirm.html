@@ -1,0 +1,26 @@
+<!-- HTMX partial — fragment only, no extends tag -->
+<div style="position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:60; display:flex; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:28px 32px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; margin:0 16px;">
+
+    <h2 style="font-size:18px; font-weight:700; color:#111827; margin:0 0 12px;">Overwrite Invoice?</h2>
+    <p style="font-size:14px; color:#374151; margin:0 0 24px; line-height:1.5;">
+      An invoice for <strong>{{ month.strftime('%B %Y') }}</strong> already exists.
+      Overwrite it completely? This cannot be undone.
+    </p>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+      <button onclick="document.getElementById('modal-container').innerHTML=''"
+        style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; cursor:pointer;">
+        Cancel
+      </button>
+      <form hx-post="/invoices/overwrite" hx-target="#modal-container" hx-swap="innerHTML" style="display:contents;">
+        <input type="hidden" name="month" value="{{ month.strftime('%Y-%m') }}">
+        <button type="submit"
+          style="background:#dc2626; color:#fff; border-radius:8px; padding:10px 18px; font-size:14px; font-weight:500; min-height:44px; border:none; cursor:pointer;">
+          Yes, Overwrite
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>

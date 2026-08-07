@@ -1,0 +1,16 @@
+<div id="supplier-id-wrapper">
+  {% if quick_error %}
+  <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:#dc2626;">{{ quick_error }}</div>
+  {% endif %}
+  <div style="display:flex; gap:8px; align-items:center;">
+    <select name="supplier_id" required
+      style="border:1px solid #d1d5db; border-radius:8px; padding:10px 13px; font-size:14px; color:#111827; flex:1; width:0; min-width:0; min-height:44px; outline:none; background:#fff; box-sizing:border-box;">
+      <option value="">Select supplier…</option>
+      {% for s in suppliers %}
+      <option value="{{ s.id }}" {% if selected_id == s.id %}selected{% endif %}>{{ s.company_name }}{% if s.location %} — {{ s.location }}{% endif %}</option>
+      {% endfor %}
+    </select>
+    <button type="button" onclick="document.getElementById('new-supplier-modal').style.display='flex'"
+      style="background:#fff; border:1px solid #d1d5db; color:#374151; border-radius:8px; padding:10px 14px; font-size:13px; font-weight:500; min-height:44px; cursor:pointer; white-space:nowrap;">+ New Supplier</button>
+  </div>
+</div>
