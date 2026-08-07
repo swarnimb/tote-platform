@@ -1,0 +1,12 @@
+{
+  "name": "tote-platform-tools",
+  "private": true,
+  "type": "module",
+  "description": "Demo-only tooling. Composes the before/after asset pairs from the captured v1 and v2 screenshots.",
+  "scripts": {
+    "build:before-after": "node build-before-after.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
